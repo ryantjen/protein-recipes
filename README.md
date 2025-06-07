@@ -49,7 +49,7 @@ To make analysis possible, the data underwent these steps for cleaning.
 
    - The dataset's designated 0's for missing ratings. However, a 0 can cause confusion when computing the mean of the ratings for a recipe, as a missing value doesn't equate to a low rating.
 
-3. Add column `'average_rating'` containing average rating per recipe.
+3. Add column `'avg_rating'` containing average rating per recipe.
 
    - Creating a more comprehensive way to analyze a given recipes rating. Note that np.nans are not included in this mean computation.
 
@@ -105,38 +105,31 @@ Here are all the columns of the cleaned dataframe.
 | `'description'`         | object         |
 | `'ingredients'`         | object         |
 | `'n_ingredients'`       | int64          |
-| `'recipe_id'`           | float64        |
 | `'rating'`              | float64        |
 | `'review'`              | object         |
-| `'average rating'`      | object         |
-| `'calories (#)'`        | float64        |
-| `'total fat (PDV)'`     | float64        |
-| `sugar (PDV)'`          | float64        |
-| `'sodium (PDV)'`        | float64        |
-| `'protein (PDV)'`       | float64        |
-| `'saturated fat (PDV)'` | float64        |
-| `'carbohydrates (PDV)'` | float64        |
-| `'is_dessert'`          | bool           |
-| `'prop_sugar'`          | float64        |
+| `'avg_rating'`          | object         |
+| `'protein_prop'`        | float64        |
+| `'calories'`            | float64        |
+| `'is_easy'`             | bool           |
+| `'is_high_protein'`     | bool           |
 
 
-Our cleaned dataframe ended up with 234429 rows and 27 columns. Here are the first 5 rows of ~unique recipes of our cleaned dataframe for illustration. Since there is a lot of columns for the merged dataframe, we selected the columns that are most relevant to our questions for display. Scroll right to view more columns.
+My cleaned dataframe ended up with 209621 rows and 17 columns. Here are the first 5 rows of ~unique recipes of the cleaned dataframe for illustration. I selected a few columns of interest to be displayed.
 
-| name                                 |     id |   minutes | submitted           |   rating |   average rating |   calories (#) |   sugar (PDV) | is_dessert   |   prop_sugar |
-|:-------------------------------------|-------:|----------:|:--------------------|---------:|-----------------:|---------------:|--------------:|:-------------|-------------:|
-| 1 brownies in the world    best ever | 333281 |        40 | 2008-10-27 00:00:00 |        4 |                4 |          138.4 |            50 | True         |    0.361272  |
-| 1 in canada chocolate chip cookies   | 453467 |        45 | 2011-04-11 00:00:00 |        5 |                5 |          595.1 |           211 | False        |    0.354562  |
-| 412 broccoli casserole               | 306168 |        40 | 2008-05-30 00:00:00 |        5 |                5 |          194.8 |             6 | False        |    0.0308008 |
-| millionaire pound cake               | 286009 |       120 | 2008-02-12 00:00:00 |        5 |                5 |          878.3 |           326 | True         |    0.371172  |
-| 2000 meatloaf                        | 475785 |        90 | 2012-03-06 00:00:00 |        5 |                5 |          267   |            12 | False        |    0.0449438 |
-
+| name                                 |   minutes |   avg_rating |   calories |   protein_prop |
+|:-------------------------------------|----------:|-------------:|-----------:|---------------:|
+| 1 brownies in the world    best ever |        40 |            4 |      138.4 |      0.0433526 |
+| 1 in canada chocolate chip cookies   |        45 |            5 |      595.1 |      0.0436901 |
+| 412 broccoli casserole               |        40 |            5 |      194.8 |      0.225873  |
+| millionaire pound cake               |       120 |            5 |      878.3 |      0.0455425 |
+| 2000 meatloaf                        |        90 |            5 |      267   |      0.217228  |
 
 ### Univariate Analysis
 
-For this analysis, we examined the distribution of the proportion of sugar in a recipe. As the plot below shows, the distribution skewed to the right, indicating that most of the recipes on food.com have a low proportion of sugar. There is also a decreasing trend, indicating that as the proportion of sugar in recipes gets higher, there are less of those recipes on food.com.
+For this analysis, I plotted the distribution of protein proportion among all recipes, making sure to drop any duplicate columns from rating. The plot shows that a majority of recipes are generally lower in protein, as it is skewed right. We can see that the mean protein proportion is around 0.15 or 15%.
 
 <iframe
-  src="assets/univariate.html"
+  src="assets/protein_dist.html"
   width="800"
   height="600"
   frameborder="0"
@@ -144,10 +137,10 @@ For this analysis, we examined the distribution of the proportion of sugar in a 
 
 ### Bivariate Analysis
 
-For this analysis, we examined the distribution of the rating of the recipe conditioned between the sugary recipes and non-sugary recipes. The graph below shows that recipes with rating of 3, 4 and 5 are more likely to be non-sugary recipes while the recipes with rating of 1 and 2 are more likely to be sugary recipes. We would dive deeper to see if the difference in these proportions are significant in later sections.
+For this analysis, I examined the relationship between a recipe being high protein and it's rating. Overall, you can see there is a disproportionate amount of ratings, with there mainly being five star ratings. However, you can see that in those five star ratings, there are significantly less 5 star ratings for recipes with higher protein. So it is possible that recipes with higher protein may not be as tasty.
 
 <iframe
-  src="assets/bivariate.html"
+  src="assets/rating_protein_barplot.html"
   width="800"
   height="600"
   frameborder="0"
@@ -155,130 +148,108 @@ For this analysis, we examined the distribution of the rating of the recipe cond
 
 ### Interesting Aggregates
 
-For this section, we investigated the relationship between the cooking time in minutes and proportion of sugar of the recipes. First, we created a small dataframe, `'filter_df'` to store the cooking time in minutes without outliers. We identified the outliers using the IQR method. After grouping the cooking time and proportion of sugar in a pivot table shown below, we created a data visualization to understand it better.
+For this section, I further investigated the relationship and amount of protein in a recipe. I generated a pivot table of protein proportion statistics conditioned on their rating. Overall, you can see differences in protein proportions among ratings, but it is still difficult to determine anything due to the larger number of 4 and 5 star ratings. 5 star recipes typically have a lower protein proportion than 4 and 3 stars.
 
-| minutes | ('mean', 'prop_sugar') | ('median', 'prop_sugar') | ('min', 'prop_sugar') | ('max', 'prop_sugar') |
-| ------: | ---------------------: | -----------------------: | --------------------: | --------------------: |
-|       0 |              0.0137804 |                0.0137804 |             0.0137804 |             0.0137804 |
-|       1 |                0.29681 |                 0.212177 |                     0 |               1.02985 |
-|       2 |               0.316258 |                  0.25641 |                     0 |               1.06358 |
-|       3 |               0.279901 |                  0.19305 |                     0 |               1.03192 |
-|       4 |               0.276908 |                 0.235205 |                     0 |               1.04322 |
-|     ... |                    ... |                      ... |                   ... |                   ... |
-|     115 |               0.132994 |                0.0705617 |                     0 |              0.955342 |
-|     116 |                 0.2303 |                   0.2303 |              0.133949 |              0.326652 |
-|     117 |              0.0412412 |                0.0412412 |             0.0412412 |             0.0412412 |
-|     118 |               0.378571 |                 0.378571 |              0.378571 |              0.378571 |
-|     120 |               0.145882 |                0.0628323 |                     0 |               1.01558 |
-
-Interestingly, the graph shows that as the cooking time increases the proportion of sugar in a recipe fluctuates more and more. According to the plot, tecipes take a long time could be either sugary or savory dishes. Also, the shapes of the line for mean and median looks very similar, especially for the recipes with shorter cooking time.
-
-<iframe
-  src="assets/interesting_agg.html"
-  width="800"
-  height="600"
-  frameborder="0"
-></iframe>
+|   rating |   ('mean', 'protein_prop') |   ('median', 'protein_prop') |   ('count', 'protein_prop') |   ('std', 'protein_prop') |
+|---------:|---------------------------:|-----------------------------:|----------------------------:|--------------------------:|
+|        1 |                   0.137561 |                    0.0996116 |                        2406 |                  0.120587 |
+|        2 |                   0.14933  |                    0.113636  |                        2023 |                  0.124265 |
+|        3 |                   0.161463 |                    0.131393  |                        6328 |                  0.128332 |
+|        4 |                   0.16567  |                    0.136054  |                       33487 |                  0.129738 |
+|        5 |                   0.153861 |                    0.120573  |                      152673 |                  0.127425 |
 
 ## Assessment of Missingness
 
-Three columns, `'date'`, `'rating'`, and `'review'`, in the merged dataset have a significant amount of missing values, so we decided to assess the missingness on the dataframe.
+Only three columns, `'description'`, `'rating'`, and `'review'`, in the cleaned dataset have a significant number of missing values.
 
 ### NMAR Analysis
 
-We believe that the missingness of the `'review'` column is NMAR, because if people feel indifferent about the recipe, they are less likely to leave a review for it since they would feel like they have nothing significant to talk about. People usually will leave a review only if they have stronger emotions towards the recipe. Their emotions would motivate them to go onto the page, click multiple buttons to leave, and take some time out of their day to write a review. For example, people who enjoyed the recipe would be willing to do all the work to leave a good review for the recipe.
+Looking at the `'review'` column, I believe that its missingness is NMAR, which means its missingness depends on the value itself. The review column will be missing when people feel indifferent about a recipe and don't want to take the time to write out a review. However, we are unable to see if the person actually feels indifferent because we don't have the review itself. A way to prove whether or not this is the case is a mood score. If reviewers also included their mood after trying the recipe, we could truly determine if it is NMAR or MAR.
 
 ### Missingness Dependency
 
-We moved on to examine the missingness of `'rating'` in the merged DataFrame by testing the dependency of its missingness. We are investigating whether the missiness in the `'rating'` column depends on the column `'prop_sugar'`, which is the proportion of sugar out of the total calories, or the column `'n_steps'`, which is the number of steps of the recipe.
+Next, I evaluated whether or not the missingness of `'rating'` in the merged DataFrame is MAR by testing the dependency of its missingness on two other columnes `'protein_prop'`, which is the proportion of protein in a recipe, and the column `'minutes'`, which is the number of minutes a recipe takes.
 
-> Proportion of Sugar and Rating
+#### Sidenote
 
-**Null Hypothesis:** The missingness of ratings does not depend on the proportion of sugar in the recipe.
+At first, I tried to determine missingness dependency doing permutation tests on the entire dataframe of values. I used absolute difference in means, and for every single column I tried, it would tell me that there was significance, even though the plotted KDE's showed their similarity. This is due the fact that there are around 12700 missing ratings and around 200000 total points. To remedy this, I used subsampling, where I subsampled 500 values from rating missing, and 500 from rating not missing, and computed the p-value of that KS statistic for 50 different sub samplings. The final p-value was the average of those 50 p-values.
 
-**Alternate Hypothesis:** The missingness of ratings does depend on the proportion of sugar in the recipe.
+> Protein Proportion and Rating
 
-**Test Statistic:** The absolute difference of mean in the proportion of sugar of the distribution of the group without missing ratings and the distribution of the group without missing ratings.
+**Null Hypothesis:** The missingness of ratings doesn't depend on the proportion of protein in a recipe.
 
-**Significance Level:** 0.05
+**Alternate Hypothesis:** The missingness of ratings does depend on the proportion of protein in a recipe.
+
+**Test Statistic:** The average p value of 50 KS Statistics from subsamples.
+
+**Significance Level:** 0.10
 
 <iframe
-  src="assets/distr_rating_sugar.html"
+  src="assets/missing_protein_kde.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
 
-We ran a permutation test by shuffling the missingness of rating for 1000 times to collect 1000 simulating mean differences in the two distributions as described in the test statistic.
+The distribution of the 50 p-values I calculated.
 
 <iframe
-  src="assets/empirical_diff_sugar.html"
+  src="assets/pvals_protein.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
 
-The **observed statistic** of **0.0063** is indicated by the red vertical line on the graph. Since the **p_value** that we found **(0.0)** is < 0.05 which is the significance level that we set, we **reject the null hypothesis**. The missingness of `'rating'` does depend on the `'prop_sugar'`, which is proportion of sugar in the recipe.
+The **average p-value** of **0.347** is indicated by the red vertical line on the graph. Since the **p_value** is greater than the significance value, we **fail to reject the null hypothesis**. It cannot be determined if the missingness of `'rating'` depends on `'protein_prop'`.
 
 > Minutes and Rating
 
-**Null Hypothesis:** The missingness of ratings does not depend on the cooking time of the recipe in minutes.
+**Null Hypothesis:** The missingness of the rating column doesn't depend on the minutes a recipe takes.
 
-**Alternate Hypothesis:** The missingness of ratings does depend on the cooking time of the recipe in minutes.
+**Alternate Hypothesis:** The missingness of the rating column does depend on the minutes a recipe takes.
 
-**Test Statistic:** The absolute difference of mean in cooking time of the recipe in minutes of the distribution of the group without missing ratings and the distribution of the group without missing ratings.
+**Test Statistic:** The average p value of 50 KS Statistics from subsamples.
 
-**Significance Level:** 0.05
+**Significance Level:** 0.10
 
 <iframe
-  src="assets/empirical_diff_prescale.html"
+  src="assets/missing_minutes_kde.html.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
 
-Due to the outliers in cooking time, it is difficult to identify the shapes of the two distributions, so we update the scale to take a closer look.
+The distribution of the 50 p-values I calculated. Notice how, overall, p-values are very low, and the mean is affected by a few outliers, which is why I chose a significance level of 0.10.
 
 <iframe
-  src="assets/distr_rating_minutes.html"
+  src="assets/pvals_minutes.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
 
-We ran another permutation test by shuffling the missingness of rating for 1000 times to collect 1000 simulating mean differences in the two distributions as described in the test statistic.
-
-<iframe
-  src="assets/empirical_diff_minutes.html"
-  width="800"
-  height="600"
-  frameborder="0"
-></iframe>
-
-The **observed statistic** of **51.4524** is indicated by the red vertical line on the graph. Since the **p-value** that we found **(0.123)** is > 0.05 which is the significance level that we set, we **fail to reject the null hypothesis**. The missingness of rating does not depend on the cooking time in minutes of the recipe.
+The **average p-value** of **0.090** is indicated by the red vertical line on the graph. Since the **p_value** is less than the significance value, we **reject the null hypothesis**. The missingness of `'rating'` depends on `'minutes'`, and thus is MAR.
 
 ## Hypothesis Testing
 
-As mentioned in the introduction, we are curious about whether people rate sugary recipes and non-sugary recipes on the same scale. By sugary recipes, we are talking about recipes with a proportion of sugar higher than the average proportion of sugar. Proportion of sugar is referring to the values in `'prop_sugar'`, which are the proportion of sugar in calories out of the total calories of the recipe.
+The main goal of this project is to see if cooking high protein recipes take longer. From the previous analyses, we can see that it is possible that higher protien foods aren't as tasty due to lower ratings. Now, let's see if they take longer to cook using a **permutation test** by shuffling the `'is_high_protein'` column.
 
-To investigate the question, we ran a **permutation test** with the following hypotheses, test statistic, and significance level.
+**Null Hypothesis:** All meals come from the same distribution of minutes to cook.
 
-**Null Hypothesis:** People rate all the recipes on the same scale.
+**Alternative Hypothesis:** Higher protein meals take longer to cook.
 
-**Alternative Hypothesis:** People rate sugary recipes lower than non-sugary recipes.
-
-**Test Statistic:** The difference in mean between rating of sugary recipes and non-sugary recipes.
+**Test Statistic:** The difference in mean between minutes to cook of high protein recipes and low protein recipes.
 
 **Significance Level:** 0.05
 
-The reason we chose to run a permutation test is because we do not have any information of any population, and we want to check if the two distributions look like they come from the same population. We proposed that **people rate the sugary recipes lower** because people might be concerned with the negative health risks relating to the recipe, and we would like to know all the opinions from the users, so we used rating instead of average rating of the recipes. For the test statistic, we chose the difference in mean of the ratings of two groups of recipes instead of absolute difference in mean. This is because we have a directional hypothesis, which is that people rate sugary recipes lower than other recipes. By looking at the difference in mean between the two groups, we can see what type of recipes typically have a higher rating, which answers our question.
+The reason I'm using a permutation test is because we do not have any information of any population, and we want to check if the two distributions look like they come from the same population. I assume that **higher protein recipes take longer to cook** because cooking meat takes longer than other recipes because you have to ensure that it is fully cooked. For the test statistic, I'm using the difference in mean of the ratings of two groups of recipes instead of absolute difference in mean. This is because the hypothesis is directional, as we inferred that higher protein recipes take longer. Using this test statistic, we can clearly see, on average, how much longer protein recipes take.
 
-To run the test, we first split the data points into two groups, sugary, which are recipes with proportion of sugar higher than the mean proportion of sugar, and the rest of the data points are in the non-sugary group. The **observed statistic** is **-0.0097**.
+To run the test, I split the data points into two groups by using the `'is_high_protein'` column. The **observed statistic** is **5.768**.
 
-Then we shuffled the ratings for 1000 times to collect 1000 simulating mean differences in the two distributions as described in the test statistic. We got a **p-value** of **0.001**.
+Then we shuffled the `'is_high_protein'` column 1000 times to collect 1000 simulated mean differences in the two distributions as described in the test statistic. As you can see, the **p-value** is **0.000**.
 
 <iframe
-  src="assets/empirical_diff_rating.html"
+  src="assets/main_perm_test.html"
   width="800"
   height="600"
   frameborder="0"
@@ -286,7 +257,7 @@ Then we shuffled the ratings for 1000 times to collect 1000 simulating mean diff
 
 #### Conclusion of Permutation Test
 
-Since the **p-value** that we found **(0.002)** is less than the significance level of 0.05, we **reject the null hypothesis**. People do not rate all the recipes on the same scale, and they tend to rate sugary recipes lower. One plausible explanation for this founding could be that people are concerned with health risks relating to sugary recipes, such as diabetes.
+Since the **p-value** was **(0.00)**, it is less than the significance level of 0.05. Therfore, we **reject the null hypothesis**. Overall, higher protein recipes take longer to cook than lower protein recipes.
 
 ## Framing a Prediction Problem
 
