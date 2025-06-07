@@ -1,12 +1,10 @@
-Author: Ryan Tjenalooi
-
 ## Overview
 
 In this data science project, I will be exploring the relationship between recipes with high protein and cooking time to determine the feasibility of healthy eating.
 
 ## Introduction
 
-Food is a critical component of our daily lives, and cooking is a hobby that brings joy and satisfaction for many. While there are many of us who have a sweet tooth and love sugary food, the health risks associated with them, such as diabetes, are not negligible. According to the National Diabetes Statistics Report from Centers for Disease Control and Prevention, 11.6% of the US population have diabetes and over 38.0% of people over 18 years old have prediabetes. With this information in our mind, we want to investigate the relationship between rating and the amount of sugar present in the recipe. **We wonder if people would rate a sugary recipe lower due to the health concerns relating to it**. To do so, we are analyzing two dataset consisting of recipes and ratings posted since 2008 on [food.com](https://www.food.com/). The original purpose of the datasets is for the recommender system research paper, [Generating Personalized Recipes from Historical User Preferences](https://cseweb.ucsd.edu/~jmcauley/pdfs/emnlp19c.pdf) by Majumder et al.
+If you want to prioritize your health, nutrition is one of the first things you should be looking towards. Overall, one of the biggest improvements you can make to your diet is increaing the amount of protein you eat. According to a National Health and Nutrition Examination Survey, up to 46% of the oldest participants did not consume enough protein. This is concerning, as protein is extremely important for muscle protein synthesis, satiety, metabolism support, and immune function. However, for some people, eating higher protein meals can seem like a daunting task, as cooking meats may take longer than other recipes, or just simply eating out. **Therefore, my focus is going to be on the relationship between high protein recipes and cooking time.** I will also examine ratings on the side to see if it is feasible to eat both healthy and delicious food. To analyze this, I will be utilizing two datasets consisting of recipes and ratings posted on [food.com](https://www.food.com/).
 
 The first dataset, `recipe`, contains 83782 rows, indicating 83782 unique recipes, with 10 columns recording the following information:
 
@@ -35,74 +33,71 @@ The second dataset, `interactions`, contains 731927 rows and each row contains a
 | `'rating'`    | Rating given        |
 | `'review'`    | Review text         |
 
-**Given the datasets, we are investigating whether people rate sugary recipes and the non-sugary recipes on the same scale.** To facilitate the investigation of our question, we separated the values in the `'nutrition'` columns into the corresponding columns,`'calories (#)'`, `'total fat (PDV)'`, `'sugar (PDV)'`, etc. PDV, or percent daily value shows how much a nutrient in a serving of food contributes to a total daily diet. Moreover, we calculated the proportion of sugar in terms of calories out of the total calories of a given recipe and stored the information in a new column, `'prop_sugar'`. because sugary in here will be referring to the recipes with value `'prop_sugar'` higher than the average `'prop_sugar'`. The most relevant columns to answer our question are `'calories(#)'`, `'sugar (PDV)'`, `'prop_sugar'`, described above, `'rating'`, which is the rating that user gave on a recipe, and `'average rating'`, which are the average of the ratings on each unique recipes.
+**Given thse datasets, my goal is to see if the distribution of cooking times for higher protein recipes is the same as lower protein recipes.** To explain protein in greater depth, I used the information in the `'nutrition'` column to create `'protein_prop'` and `'is_high_protein'` columns. I will go into further depth on how this was achieved in the data cleaning section.
 
-By seeking an answer to our question, we would have an insight on people’s preference on sugary recipes, which could help contributors on Food.com revise and improve their recipes to align with the public’s interests. In addition, the new pieces of information could lead to future work on diving deeper into how much awareness people have on the negative health effects of sweets.
+Through this analysis, I will be able to debunk whether or not it is harder to eat healthier and just how much harder it is. I hope this exploration can motivate more people to eat healthier, since health is wealth!
 
 ## Data Cleaning and Exploratory Data Analysis
 
-To make our analysis of the dataset more efficient and convenient, we conducted the following data cleaning steps.
+To make analysis possible, the data underwent these steps for cleaning.
 
 1. Left merge the recipes and interactions datasets on id and recipe_id.
 
-   - This step helps match the unique recipes with their rating and review.
+   - This step is essential to matching all ratings with their corresponding recipes.
 
-1. Check data types of all the columns.
+2. Fill all ratings of 0 with np.nan.
 
-   - This step helps us evaluate what data cleaning steps are appropriate for the dataset and if we need to conduct data type conversion.
-   - | Column             | Description |
-     | :----------------- | :---------- |
-     | `'name'`           | object      |
-     | `'id'`             | int64       |
-     | `'minutes'`        | int64       |
-     | `'contributor_id'` | int64       |
-     | `'submitted'`      | object      |
-     | `'tags'`           | object      |
-     | `'nutrition'`      | object      |
-     | `'n_steps'`        | int64       |
-     | `'steps'`          | object      |
-     | `'description'`    | object      |
-     | `'ingredients'`    | object      |
-     | `'n_ingredients'`  | int64       |
-     | `'user_id'`        | float64     |
-     | `'recipe_id'`      | float64     |
-     | `'date'`           | object      |
-     | `'rating'`         | float64     |
-     | `'review'`         | object      |
+   - The dataset's designated 0's for missing ratings. However, a 0 can cause confusion when computing the mean of the ratings for a recipe, as a missing value doesn't equate to a low rating.
 
-1. Fill all ratings of 0 with np.nan.
+3. Add column `'average_rating'` containing average rating per recipe.
 
-   - Rating is generally on a scale from 1 to 5, 1 meaning the lowest rating while 5 means the highest rating. With that being said, a rating of 0 indicates missing values in rating. Thus, to avoid bias in the ratings, we filled the value 0 with np.nan.
+   - Creating a more comprehensive way to analyze a given recipes rating. Note that np.nans are not included in this mean computation.
 
-1. Add column `'average_rating'` containing average rating per recipe.
+4. Change values in the nutrition column to lists of floats.
 
-   - Since a recipe can have numerous ratings from different users, we take an average of all the ratings to get a more comprehensive understanding of the rating of a given recipe.
+   - The values of the nutrition column are actually strings that are formatted like lists. So, I converted them to actual lists with float values in them as to make the nutritional data easier to access.
 
-1. Split values in the nutrition column to individual columns of floats.
-
-   - Even though the values in the nutrition column look like a list, they are actually objects, which act like strings. Given by the description of the columns of the recipe dataset, we know what each individual values inside the brackets mean. To split up the values, we applied a lambda function then converted the columns to floats. It will allow us to conduct numerical calculations on the columns.
-
-1. Convert submitted and date to datetime.
+5. Drop submitted column.
 
    - These two columns are both stored as objects initially, so we converted them into datetime to allow us conduct analysis on trends over time if needed.
 
-1. Add `'is_dessert'` to the dataframe
+6. Create `'protein_prop'` column and add it to the dataframe.
 
-   - `'is_dessert'` is a boolean column checking if the tags of recipes contain 'dessert' since desserts typically have a higher amount of sugar. This step separates the recipes into two groups, ones that are dessert and ones that are not. This provides us another way to compare ratings of recipes with more sugar and ones with less sugar.
+    - `'protein_prop'` contains the proportion of calories that come from protein in a recipe. This was calculated using the nutrition PDV's. The recommended amount of protein is 50 grams, so I multiplied the PDV divided by 100 by 50 to get the grams of protein. Each gram of protein is 4 calories, so then I multiplied by 4 to get the number of calories from protein, and then divided that by the total calories which was also in the nutrition column.
 
-1. Add `'prop_sugar'` to the dataframe
-   - prop_sugar is the proportion of sugar of the total calories in a recipe. To calculate this, we use the values in the sugar (PDV) column to divide by 100% to get it in the decimal form. Then, we multiply by 25 to convert the values to grams of sugar since 25 grams of sugar is the 100% daily value (PDV). We got this value of 25 grams from experimenting on food.com with different amounts of sugar in a recipe. The experimentation allows us to understand the nutrition formula used on the website for recipes. Lastly, we multiply by 4 since there are 4 calories in 1 gram of sugar. After all these conversions, we end up with the number of calories of sugar, so we can divide by the total amount of calories in the recipe to get the proportion of sugar of the total calories. This data cleaning step is critical to allow us to make parallel comparisons on the amount of sugar in a recipe without concerns of extremely large values since all the values will be between 0 and 1.
+7. Create `'is_high_protein'` column and add it to the dataframe.
+
+    - Used the mean protein proportion from the `'protein_prop'` column as the threshold and split rows into high protein and low protein, with boolean values in the column.
+
+8. Add `'calories'` column to the dataframe.
+
+   - Used the `'nutrition'` column to add calories.
+
+9. Reformat `'tags'` and `'steps'` columns into a lists of strings.
+
+    - Similar the the `'nutrition'` column, the `'tags'` and `'steps'` columns didn't contain only lists. I had to parse through and reformat both lists and strings into the list of string format I wanted.
+
+10. Create `'is_easy'` column by looking through `'tags'` column.
+
+    - Parsed through the tags of each recipe to see if there was the tag "easy". This column contains boolean values.
+
+11. Removed outliers using IQR.
+
+    - Found that there wer unreasonable outliers in both the `'minutes'` and `'calories'` columns. To remove outliers, I calculated the interquartile range of each column, and dropped any values 2.5 IQRs above Q3 and any values 2.5 IQRs below Q1.
+
+12. Dropping unnecessary columns.
+
+    - For the analysis, I don't need `'user_id'` as it is the same as id, or `'contributor_id'`. I also don't use the date submitted for any of my analyses, so I dropped the `'submitted'` and `'date'` columns as well.
+
 
 #### Result
-Here are all the columns of the cleaned df.
+Here are all the columns of the cleaned dataframe.
 
 | Column                  | Description    |
 | :---------------------- | :------------- |
 | `'name'`                | object         |
 | `'id'`                  | int64          |
 | `'minutes'`             | int64          |
-| `'contributor_id'`      | int64          |
-| `'submitted'`           | datetime64[ns] |
 | `'tags'`                | object         |
 | `'nutrition'`           | object         |
 | `'n_steps'`             | int64          |
@@ -110,9 +105,7 @@ Here are all the columns of the cleaned df.
 | `'description'`         | object         |
 | `'ingredients'`         | object         |
 | `'n_ingredients'`       | int64          |
-| `'user_id'`             | float64        |
 | `'recipe_id'`           | float64        |
-| `'date'`                | datetime64[ns] |
 | `'rating'`              | float64        |
 | `'review'`              | object         |
 | `'average rating'`      | object         |
