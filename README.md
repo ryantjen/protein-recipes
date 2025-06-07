@@ -130,7 +130,7 @@ For this analysis, I plotted the distribution of protein proportion among all re
 
 <iframe
   src="assets/protein_dist.html"
-  width="800"
+  width="600"
   height="600"
   frameborder="0"
 ></iframe>
@@ -183,14 +183,13 @@ At first, I tried to determine missingness dependency doing permutation tests on
 **Test Statistic:** The average p value of 50 KS Statistics from subsamples.
 
 **Significance Level:** 0.10
-<div style="text-align: center;">
-  <iframe
-    src="assets/missing_protein_kde.html"
-    width="800"
-    height="600"
-    frameborder="0"
-  ></iframe>
-</div>
+<iframe
+  src="assets/missing_protein_kde.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
 The distribution of the 50 p-values I calculated.
 
 <iframe
@@ -213,7 +212,7 @@ The **average p-value** of **0.347** is indicated by the red vertical line on th
 **Significance Level:** 0.10
 
 <iframe
-  src="assets/missing_minutes_kde.html.html"
+  src="assets/missing_minutes_kde.html"
   width="800"
   height="600"
   frameborder="0"
