@@ -130,7 +130,7 @@ For this analysis, I plotted the distribution of protein proportion among all re
 
 <iframe
   src="assets/protein_dist.html"
-  width="600"
+  width="800"
   height="600"
   frameborder="0"
 ></iframe>
@@ -260,59 +260,63 @@ Since the **p-value** was **(0.000)**, it is less than the significance level of
 
 ## Framing a Prediction Problem
 
-We plan to **predict average rating of a recipe** which would be a **classification problem** since we can treat rating as a ordinal categorical variable if we round the average rating so that we only have [1, 2, 3, 4, 5] as possible values. To address our prediction problem, we will build a multi-class classifier since our average ratings have 5 possible values that the model will predict from.
+I plan to **predict the minutes a recipe takes to cook** which would be a **linear regression problem** since minutes is a continuous variable. To achieve this, I will build a linear regression model to predict the minutes using features of my choice.
 
-We chose the average rating of a recipe as a response variable because it is a good representation of the overall rating of a recipe. We have also previously found significant correlation between rating and sugary recipes, which are recipes with proportion of sugar higher than the average proportion of sugar, so we may be able to predict the rating through the proportion of sugar.
+The variable I'm trying to predict, minutes, is a good measure of how time consuming cooking healthy meals is. Also, from the previous permutation test, I have seen that minutes and protein proportion are highly correlated, with higher protein proportion correlating to longer minutes to cook. As such, it is possible to predict minutes to cook using protein proportion.
 
-To evaluate our model, we will use the f1 score instead of accuracy, because the distribution for the ratings are heavily skewed left with most ratings concentrated in the higher ratings (4-5). This means that there are more recipes with higher average ratings. If we use accuracy, the model's performance may be misleading due to the imbalanced classes.
+To test the model's accuracy, I will be using the root mean squared error, because it is the best measure of loss between an actual and predicted set of continuous variables.
 
-The information we have prior making our prediction are all the columns in the `rating` dataset, which are listed in the introduction section. All those columns are features relating to the recipes themselves, thus we would have access to it even though no one has made a rating and review on them.
+The information we have prior is all columns of our dataset except `'rating'`. Also, in the `'steps'` column, some recipes include cook times, but I will not be using those to predict cooking time, as I just want to use the characteristics of a recipe.
 
 ## Baseline Model
 
-For our baseline model, we are utilizing a random forest classifier and split the data points into training and test sets. The features we are using for this model is `'prop_sugar'`, a column containing quantitative numerical values, and `'is_dessert'`, a column containing nominal values since they are boolean values.
+For the baseline model, I used a Linear Regression model trained on data points split into training and test sets using `train_test_split`. The two features I used are `'protein_prop'` and `'calories'`, both columns with quantitative values.
 
-We one hot encoded the boolean values in `'is_dessert'` with the corresponding 0 and 1 values and dropped one of the encoded columns. This step allows us to train the model appropriately.
+I did not do any transforming of `'protein_prop'`, but I did use the FunctionTransformer on `'calories'`, applying a log(x+1) transformation because the data was right skewed.
 
-The metric, **F1 score**, of this model is **0.87**. The F1 score for each rating categoires are 0.20, 0.47, 0.50, 0.74, and 0.92 for rating of 1s, 2s, 3s, 4s, and 5s respectively. The metrics let us know that the model predicts better for rating of 4s and 5s and not as accurate for the lower ratings. The reason for this could be that there are more recipes with rating 4s and 5s in the dataset compared to other ratings. With the more data points, the model predicted better for higher ratings.
+The metric, **RMSE**, of this model is **28.66**. This is not good, as the average value of the `'minutes'` column is around 40. Therefore, the model's predictions are typically off by 75% of the mean.
 
 ## Final Model
 
-For the final model, we used `'is_dessert'`, `'minutes'`, `'calories (#)'`, `'submitted'`, and `'prop_sugar'` as the features.
+For the final model, I used `'is_high_protein'`, `'n_steps'`, `'calories'`, `'n_ingredients'`, `'is_easy'`, and `'cooking_method'` as the features.
 
-`'is_dessert'`
+`'is_high_protein'`
 
-The column categorizes the data as dessert or not dessert by checking if the recipe's tags contain 'dessert'. We chose this feature because based on the the bar graph we construsted between `'average rating'` and `'is_dessert'`, we saw that for the higher ratings (4 and 5) there are less dessert recipes. This trend might be useful in helping the model predict the average rating of a recipe. We one hot encoded this column like we did for the baseline model.
+This column uses `'protein_prop'` to categorize a recipe whether or not it's protein proportion is above or below the mean. I used this variable because we saw significant correlation between protein and minutes to cook in the hypothesis testing section. This column was OneHotEncoded in the pipeline. It is important to note that `'protein_prop'` performs exactly the same as this column, I just decided to go with this one.
 
-`'minutes'`
+`'n_steps'`
 
-The column is the cooking time of the recipe in minutes. By constructing a bivariate table of the `'minutes'` and `'average rating'`, we learned that the recipes took longer to cook tend to have medicore ratings, like ratings of 2 or 3. The differences between the mean minutes among the different ratings makes us believe that it could help with our predicition model. It is also reasonable that a recipe that takes long to make would lead to lower rating since people are busy nowadays and lack patience. We used `StandardScaler` to standardize the `'minutes'` feature to guarantee that the cooking time are in a comparable range since some recipes has extremely long cooking times.
+This column is the number of steps a recipe is. It is reasonable to assume that a recipe with more steps will take longer than a recipe with less steps, which is why I chose it for my model. I did not use any transformations on this column.
 
-`'calories (#)'`
+`'calories'`
 
-The column contains the total calories of the recipe. By constructing a bivariate table of the `'calories (#)'` and `'average rating'`, we learned that recipes with higher rating typically has less calories. A lower calories generally indicates that the recipe is healthier, thus it is logical that it has a higher rating. Knowing this, we think the relationship between `'calories (#)'` and `'average rating'` would help our model predict better. To transform the `'calories (#)'` feature, we used `RobustScaler`, which scales the numerical features while handling outliers effectively. From the EDA, we learned that the columns contains many outliers, and it might introduces bias to our model, so we engineered the feature to minimize the ourlier effects.
+The column contains the total calories of the recipe. It is reasonable to assume that the more calories a recipe contains, the more food it is, and thus a longer cooking time. Also, more calorie dense foods, such as deserts and meats require longer cooking times. I used the same FunctionTransformer as the baseline, applying log(1+x) to reduce the effect of the right skew.
 
-`'submitted'`
+`'n_ingredients'`
 
-The column contains information of the date that the recipe was submitted. In data cleaning process, we converted the column to be `datetime[ns]` and now we pulled out only the year using `FunctionTransformer`. When we created a table of `'submitted'` and `'average rating'`, we noticed that recipes submitted in recent years has a lower ratings. This could be due to the lack of novelity of newer recipes since most of the classic recipes might already posted on the website. The trend between `'submitted'` and `'average rating'` could be also useful in improving our model.
+This column is the number of ingredients a recipe contains. It is reasonable to assume that a recipe with more ingredients will take longer than a recipe less ingredients, as you have to combine or prep more items. I did not use any transformations on this column.
 
-`'prop_sugar'`
+`'is_easy'`
 
-As mentioned numerous time in earlier sections, this column contains information of the proportion of sugar in calories out of the total calories of the recipe. According to our hypothesis testing, people seems more likely to rate a sugary recipe lower than recipes that are not sugary. This takeaway motivates us use this feature since the relationship could be a significant deciding factor when making predicition on the `'average rating'`. For this feature, we will leave the column as it is.
+This column is a boolean for whether or not the tag "easy" was in the recipe tags. It is reasonable to assume that easier recipes involve less moving parts, and easier techniques of cooking. As such, easier recipes should take a shorter time to cook than hard. Since the values are nominal, I used OneHotEncoding for this column.
 
-We used `RandomForestClassifier` as our modeling algorithm and conducted `GridSearchCV` to tune the hyperparameters of `max_depth` and `n_estimators` of the `RandomForestClassifier`. Decision trees are prone to high variance, and the two hyperparameters we chose serve a way to control the variance and avoid overfitting the training set. The best combination of the hyperparameters is 42 for the `max_depth` and 142 for the `n_estimators`.
+`'cooking_method'`
 
-The metric, **F1 Score**, of the final model is **0.92**, which is a 0.05 increase from the F1 Score of the baseline model. Moreover, the F1 score of each of the rating also improved. The F1 score for each rating categoires are now 0.36, 0.66, 0.68, 0.85, and 0.95 for rating of 1s, 2s, 3s, 4s, and 5s respectively.
+I created this column just for the linear regression model. I thought it would be a good idea to include the primary cooking method of the recipe, as recipes with ovens often take longer due to having to preheat and cook. Other methods include boiling, and using a pan/skillet/grill. The columns's values are nominal, so this was also OneHotEncoded.
+
+I used `LinearRegression` as my modeling algorithm and manually created different combinations of features to test out which was best. I created mulitple pipes and used a cross validation level of 5 to estimate RMSE for each combination of features, and my final model did best will all of the aforementioned features.
+
+The metric, **RMSE**, of the final model is **25.99**, which is a 2.67 improvement from the RMSE of the baseline model. This model performs better than the baseline, however, overall, it's predictions are still pretty far form optimal.
 
 ## Fairness Analysis
 
-For our fairness analysis, we split the recipes into two groups: high calories and low calories. We designated high calorie recipes to be ones with calories > 301.1 and low calorie recipes to be ones with calories <= 301.1. We found that the median calories for our data set is **301.1** which is why we chose it as the threshold. We used median instead of mean, because we previously found that calories had many high outliers which can skew our results. We chose to evaluate the **precision parity** of the model for the two groups, because we think it’s more important for the model to correctly identify the rating of a recipe among all instances of that rating. False positives would not be good since it would mislead users with the incorrectly labeled ratings. False positives would not be good since it would mislead users with the incorrectly labeled ratings. For example, if we predicted recipes with lower calories to have a bad rating, people would be discouraged to try them. For recipes with lower calories, it wouldn’t be good to mislabel them, as low calorie recipes may be healthier for people.
+For the fairness analysis, I split the recipes into two groups, is dessert and is not dessert by parsing through the `'tags'` column. I chose to evaluate the **RMSE** for the two groups. 
 
-**Null Hypothesis**: Our model is fair. Its precision for recipes with higher calories and lower calories are roughly the same, and any differences are due to random chance.
+**Null Hypothesis**: The model is fair. It's RMSE for predicting the cooking time for dessert recipes and non desert recipes is roughly the same.
 
-**Alternative Hypothesis**: Our model is unfair. Its precision for recipes with lower calories is lower than its precision for recipes with higher calories.
+**Alternative Hypothesis**: The model is unfair. It performs worse at predicitng cooking time for dessert recipes.
 
-**Test Statistic**: Difference in precision (low calories - high calories)
+**Test Statistic**: Difference in RMSE (is dessert - is not desert)
 
 **Significance Level**: 0.05
 
@@ -323,4 +327,4 @@ For our fairness analysis, we split the recipes into two groups: high calories a
   frameborder="0"
 ></iframe>
 
-To run the permutation test, we created a new column `is_high_calories` to differentiate between the low and high calorie recipes. When we took the difference in their precision, we got an observed test statistic of **-0.023**. We shuffled the `is_high_calories` column for 1000 times to collect 1000 simulating differences in the two distributions as described in the test statistic. After running our permutation test, we got a p-value of **0.0**. Since the p-value of 0.0 is less than 0.05, we reject the null hypothesis that our model is fair. The model's precision for recipes with lower calories is lower than its precision for recipes with higher calories.
+To run the permutation test, I created a new column `'is_dessert'` to differentiate between the dessert and non dessert recipes. I then used the final model to predict minutes to cook each recipe, and then computed an **observed statistic** of **1.218**. Then I shuffled the `'is_dessert'` column 1000 times, computing the difference in RMSE's to build a null distribution. The **p-value** was **0.048** which is less than our significane level of 0.05, so re reject the null hypothesis. The model performs worse for deserts, which makes since, as they are lower in protein and often use ovens.
