@@ -183,14 +183,14 @@ At first, I tried to determine missingness dependency doing permutation tests on
 **Test Statistic:** The average p value of 50 KS Statistics from subsamples.
 
 **Significance Level:** 0.10
-
-<iframe
-  src="assets/missing_protein_kde.html"
-  width="800"
-  height="600"
-  frameborder="0"
-></iframe>
-
+<div style="text-align: center;">
+  <iframe
+    src="assets/missing_protein_kde.html"
+    width="800"
+    height="600"
+    frameborder="0"
+  ></iframe>
+</div>
 The distribution of the 50 p-values I calculated.
 
 <iframe
@@ -257,7 +257,7 @@ Then we shuffled the `'is_high_protein'` column 1000 times to collect 1000 simul
 
 #### Conclusion of Permutation Test
 
-Since the **p-value** was **(0.00)**, it is less than the significance level of 0.05. Therfore, we **reject the null hypothesis**. Overall, higher protein recipes take longer to cook than lower protein recipes.
+Since the **p-value** was **(0.000)**, it is less than the significance level of 0.05. Therfore, we **reject the null hypothesis**. Overall, higher protein recipes take longer to cook than lower protein recipes.
 
 ## Framing a Prediction Problem
 
@@ -318,7 +318,7 @@ For our fairness analysis, we split the recipes into two groups: high calories a
 **Significance Level**: 0.05
 
 <iframe
-  src="assets/empirical_precision.html"
+  src="assets/fairness.html"
   width="800"
   height="600"
   frameborder="0"
